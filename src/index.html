@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+       <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.8.2/fullcalendar.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="app">
+            {{ status }}
+        
+            <h2>Recent Activities</h2>
+            <table class="table table-striped">
+                <thead>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Duration</th>
+                    <th>Title</th>
+                </thead>
+                <tbody>
+                    <tr v-for="activity in recentActivities">
+                        <td>{{ activity.id }}</td>
+                        <td>{{ activity.fields['CSEngineering.ActivityStartDate'].substr(0,10) }}</td>
+                        <td>{{ activity.fields['CSEngineering.ActivityDuration'] }}</td>
+                        <td><a v-bind:href="activity.url">{{ activity.fields['System.Title'] }}</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="calendar"></div>
+
+        <script src="bundle.js"></script>
+    </body>
+</html>

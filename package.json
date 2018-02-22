@@ -1,0 +1,24 @@
+{
+  "name": "vstsdash",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "dependencies": {
+    "@types/lodash": "^4.14.104",
+    "axios": "^0.18.0",
+    "fullcalendar": "^3.8.2",
+    "jquery": "^3.3.1",
+    "lodash": "^4.17.5",
+    "vue": "^2.5.13"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.3.0",
+    "ts-loader": "^3.5.0",
+    "typescript": "^2.7.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

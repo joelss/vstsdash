@@ -21,13 +21,22 @@ let start = async () => {
     app.status = 'Loading activity list...';
     let activityIds = await vsts.queryWorkItems(queryId);
     app.status = 'Loading activities...';
-    let activities = await vsts.expandWorkItems(activityIds, []);
+    let activities = await vsts.expandWorkItems(activityIds);
+    app.status = 'Loading Projects & Partners...';
+    let projectIds = await vsts.queryWorkItems('4218624d-d89d-46a0-8c62-450f5319f40e');
+    app.status = 'Loading project details...';
+    let projects = await vsts.expandWorkItems(projectIds);
+
+    vsts.mapParents(activities, projects);
+    vsts.validateWorkItems(activities);
+
+    activities = _.orderBy(activities, ['date'], ['desc']);
     for(let activity of activities) {
         app.recentActivities.push(activity);
     }
     app.status = '';
 
-    renderCalendar(app.recentActivities);
+    //renderCalendar(app.recentActivities);
 }
 
 start();

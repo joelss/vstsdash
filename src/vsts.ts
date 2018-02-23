@@ -9,7 +9,7 @@ export class Vsts {
 
     readonly authHeader:string;
 
-    cache: { [key: string]: WorkItem };
+    //cache: { [key: string]: WorkItem };
 
     constructor(vstsToken:string, vstsSiteName:string, vstsProjectName:string) {
         this.vstsToken = vstsToken;
@@ -18,7 +18,7 @@ export class Vsts {
 
         this.authHeader = 'Basic ' + btoa(':' + this.vstsToken);
 
-        this.cache = {};
+        //this.cache = {};
     }
 
     async queryWorkItems(queryGuid:string) {
@@ -53,6 +53,9 @@ export class Vsts {
             console.warn('Loading more than 200 work items is not supported yet!');
             workItemIds = workItemIds.slice(0, 200);
         }
+        if(workItemIds.length === 0) {
+            return;
+        }
 
         console.log('Querying the work item details');
 
@@ -61,8 +64,8 @@ export class Vsts {
         fields.push('CSEngineering.ActivityStartDate');
         fields.push('CSEngineering.ActivityDuration');
         fields.push('System.Title');
-        fields.push('System.Tags')
-        fields.push('System.relations');
+        //fields.push('System.Tags');
+        fields.push('System.AssignedTo');
 
         //fields=System.Id,System.Title,System.WorkItemType,Microsoft.VSTS.Scheduling.RemainingWork
     
@@ -71,8 +74,8 @@ export class Vsts {
             params: {
                 ids: workItemIds.join(','),
                 'api-version': '1.0',
-                'fields': fields.join(','),
-                //'$expand': 'relations',
+                //'fields': fields.join(','),
+                '$expand': 'relations'
             },
             json: true,
             headers: 
@@ -81,7 +84,13 @@ export class Vsts {
             }
         }
     
-        let response = await axios(options);
+        let response:any = {};
+        try {
+            response = await axios(options);
+        } catch(err) {
+            console.error(err);
+            console.error(err.response.data.message);
+        }
         let rawWorkItems = response.data.value;
         let workItems = new Array<WorkItem>();
 
@@ -89,10 +98,14 @@ export class Vsts {
             let w = new WorkItem();
 
             w.id = wi.id;
-            w.date = new Date(Date.parse(wi.fields['CSEngineering.ActivityStartDate'].substr(0,10)));
+            if(wi.fields['CSEngineering.ActivityStartDate']) {
+                w.date = new Date(Date.parse(wi.fields['CSEngineering.ActivityStartDate'].substr(0,10)));
+            }
             w.duration = parseInt(wi.fields['CSEngineering.ActivityDuration']);
             w.title = wi.fields['System.Title'];
-            w.url = wi.url;
+            w.url = 'https://cseng.visualstudio.com/CSEng/_queries?id=' + w.id;
+
+            w.assignedTo = wi.fields['System.AssignedTo'].split('<')[0];
 
             if(wi.relations && wi.relations.length > 0) {
                 let url = wi.relations[0].url;
@@ -101,28 +114,53 @@ export class Vsts {
                 let parts = r.exec(url);
                 w.parentId = parseInt(parts[1]);
             }
-
-            if(w.parentId in this.cache) {
-                w.parent = this.cache[w.parentId];
+            if(wi.fields['System.Tags'] && wi.fields['System.Tags'].length > 0) {
+                let tagString = wi.fields['System.Tags'];
+                let tags = tagString.split(';');
+                for(let tag of tags) {
+                    w.tags.push(tag);
+                }
             }
 
-            this.validateWorkItem(w);
+            //if(w.parentId in this.cache) {
+            //    w.parent = this.cache[w.parentId];
+           // }
+
+            //this.validateWorkItem(w);
             workItems.push(w);
-            this.addToCache(w);
+            //this.addToCache(w);
         }
 
         return workItems;
     }
 
+    mapParents(activities:WorkItem[], projects:WorkItem[]) {
+        if(!activities && !projects) {
+            return;
+        }
+
+        for(let activity of activities) {
+            if(activity.parentId) {
+                let parent = _.find(projects, (item) => { return activity.parentId === item.id; });
+                if(parent) {
+                    activity.parent = parent;
+                }
+            }
+        }
+    }
+
+    /*
     addToCache(workItem:WorkItem) {
         if(!(workItem.id in this.cache)) {
             this.cache[workItem.id] = workItem;
         }
-    }
+    }*/
 
-    validateWorkItem(workItem:WorkItem) {
-        if(!workItem.parentId) {
-            workItem.validationErrors.push("Missing Parent");
+    validateWorkItems(workItems:WorkItem[]) {
+        for(let wi of workItems) {
+            if(!wi.parentId) {
+                wi.validationErrors.push("Missing Parent");
+            }
         }
     }
 }
